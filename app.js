@@ -2,20 +2,12 @@
  * =================================================================
  * ARCHIVO: app.js
  * Lógica: Tier -> Familia -> Producto
- * Actualizaciones: 
- * 1. Estructura de datos con campo 'familia_key'.
- * 2. Lógica de selectores anidados.
- * 3. Función generateEtiqueta simplificada (solo Producto y Código de Barras/Números).
+ * ACTUALIZACIÓN: Se agregó el botón de imprimir y la función printEtiqueta().
  * =================================================================
  */
 
 // =================================================================
-// 1. DATOS ORIGINALES DEL CATÁLOGO (RAW DATA)
-// NG: Sin Graduación (Neutros y Clips)
-// MO: Monofocal (Monofocal + cualquier tratamiento)
-// PN: Progresivo Newton
-// NP: Progresivo Newton Plus
-// MI: Micas
+// 1. DATOS ORIGINALES DEL CATÁLOGO (RAW DATA) - (Se mantiene igual)
 // =================================================================
 
 const RAW_CATALOG_DATA = [
@@ -165,7 +157,7 @@ const RAW_CATALOG_DATA = [
     { tier: "T5", descripcion: "MICAS PROGRE NEWTON+POLARIZADO", precio: 230500.00, familia_key: "MI", graduacion_key: "GRAD", sku_con_apostrofe: "T5MicProNewSol", codigo_barra: "2000409299089" },
     { tier: "T5", descripcion: "MICAS PROGRENEWTON+AR AZUL", precio: 180500.00, familia_key: "MI", graduacion_key: "GRAD", sku_con_apostrofe: "T5MicProNewArAz", codigo_barra: "2000409299096" },
     { tier: "T5", descripcion: "MICAS PROGRE NEWTON+FOTO", precio: 210500.00, familia_key: "MI", graduacion_key: "GRAD", sku_con_apostrofe: "T5MicProNewFo", codigo_barra: "2000409299102" },
-    { tier: "T5", descripcion: "MICAS PROGRENEWTON+HI", precio: 190500.00, familia_key: "MI", graduacion_key: "GRAD", sku_con_apostrofe: "T5MicProNewHi", codigo_barra: "2000409299119" },
+    { tier: "T5", descripcion: "MICAS PROGRE NEWTON+HI", precio: 190500.00, familia_key: "MI", graduacion_key: "GRAD", sku_con_apostrofe: "T5MicProNewHi", codigo_barra: "2000409299119" },
     { tier: "T5", descripcion: "MICAS PROGRENEW+HI+AR AZUL", precio: 229500.00, familia_key: "MI", graduacion_key: "GRAD", sku_con_apostrofe: "T5MicProNewHiArAz", codigo_barra: "2000409299126" },
     { tier: "T5", descripcion: "MICAS PROGRESIVO NEWTON PLUS", precio: 261500.00, familia_key: "MI", graduacion_key: "GRAD", sku_con_apostrofe: "T5MicProNewPl", codigo_barra: "2000409299133" },
     { tier: "T5", descripcion: "MICAS PROGRE NEWPLUS+AR AZUL", precio: 300500.00, familia_key: "MI", graduacion_key: "GRAD", sku_con_apostrofe: "T5MicProNewPlArAz", codigo_barra: "2000409299140" },
@@ -177,23 +169,19 @@ const RAW_CATALOG_DATA = [
 
 
 // =================================================================
-// 2. PROCESAMIENTO Y MAPPING
+// 2. PROCESAMIENTO Y MAPPING - (Se mantiene igual)
 // =================================================================
 
 function processCatalogData(data) {
     const processedData = {};
     data.forEach(item => {
-        // Limpia el SKU quitando cualquier apóstrofe (carácter simple ')
         const cleanSku = item.sku_con_apostrofe.replace(/'/g, ''); 
-        
-        // La clave de acceso usa Tier y Familia
         const key = `${item.tier}_${item.familia_key}_${cleanSku}`;
         
         if (!processedData[item.tier]) {
             processedData[item.tier] = {};
         }
 
-        // Almacena los datos en la estructura final
         processedData[item.tier][key] = {
             descripcion: item.descripcion,
             precio: item.precio,
@@ -207,7 +195,6 @@ function processCatalogData(data) {
 
 const CATALOG_DATA = processCatalogData(RAW_CATALOG_DATA);
 
-// Mapeo de Nombres de Familia (Para mostrar en el segundo selector)
 const FAMILIA_OPTIONS = {
     'NG': 'Sin Graduación / Neutros',
     'MO': 'Monofocal',
@@ -218,20 +205,13 @@ const FAMILIA_OPTIONS = {
 
 
 // =================================================================
-// 3. EVENTOS Y LÓGICA DE LA APLICACIÓN
+// 3. EVENTOS Y LÓGICA DE LA APLICACIÓN - (Se mantiene igual)
 // =================================================================
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Escucha el primer selector: Tier
     document.getElementById('tier').addEventListener('change', updateFamiliaOptions);
-    
-    // Escucha el segundo selector: Familia
     document.getElementById('familia').addEventListener('change', updateProductOptions);
-    
-    // Escucha el tercer selector: Producto Final
     document.getElementById('productoFinal').addEventListener('change', generateEtiqueta);
-    
-    // Inicializa limpiando todo al cargar
     updateFamiliaOptions(); 
 });
 
@@ -242,20 +222,17 @@ function updateFamiliaOptions() {
     familiaSelect.innerHTML = '<option value="">-- Selecciona --</option>';
 
     if (!tier) {
-        updateProductOptions(); // Limpia el selector final
+        updateProductOptions();
         return;
     }
 
     const availableFamilias = new Set();
-
-    // Recorre el catálogo para el tier seleccionado y recolecta las familias disponibles
     for (const key in CATALOG_DATA[tier]) {
         if (CATALOG_DATA[tier].hasOwnProperty(key)) {
             availableFamilias.add(CATALOG_DATA[tier][key].familia_key);
         }
     }
 
-    // Ordena las familias alfabéticamente
     const sortedFamilias = Array.from(availableFamilias).sort((a, b) => {
         return FAMILIA_OPTIONS[a].localeCompare(FAMILIA_OPTIONS[b]);
     });
@@ -267,7 +244,7 @@ function updateFamiliaOptions() {
         familiaSelect.appendChild(option);
     });
 
-    updateProductOptions(); // Limpia el selector final
+    updateProductOptions();
 }
 
 
@@ -287,28 +264,23 @@ function updateProductOptions() {
     for (const key in CATALOG_DATA[tier]) {
         const product = CATALOG_DATA[tier][key];
         
-        // Filtramos por la FAMILIA seleccionada
         if (product.familia_key === familiaKey) {
             
-            // Formatea el precio para mostrar en el selector
             const precioFormateado = product.precio.toLocaleString('es-CL', {
                 style: 'currency',
                 currency: 'CLP',
                 minimumFractionDigits: 0
             });
             
-            // La opción en el selector combina la descripción y el precio formateado
             const optionText = `${product.descripcion} (${precioFormateado})`;
             filteredProducts[key] = optionText;
         }
     }
 
-    // Ordena las opciones alfabéticamente por el texto de la opción
     const sortedKeys = Object.keys(filteredProducts).sort((a, b) => {
         return filteredProducts[a].localeCompare(filteredProducts[b]);
     });
 
-    // Agregar las opciones ordenadas al selector
     sortedKeys.forEach(key => {
         const option = document.createElement('option');
         option.value = key;
@@ -332,16 +304,16 @@ function generateEtiqueta() {
 
     const selectedProduct = CATALOG_DATA[tier][fullKey];
 
-    // Formato de Moneda para el TOTAL DE LA VENTA (CLP sin decimales)
     const precioFormateado = selectedProduct.precio.toLocaleString('es-CL', {
         style: 'currency',
         currency: 'CLP', 
         minimumFractionDigits: 0
     });
 
-    // Estructura de la etiqueta simplificada (solo Producto, Total y Código de Barras)
+    // Añadimos el ID 'printableArea' al contenedor principal de la etiqueta
+    // y el botón de impresión.
     const etiquetaHTML = `
-        <div class="etiqueta-container">
+        <div id="printableArea" class="etiqueta-container">
             
             <div class="info-line">
                 <span class="label">Producto:</span>
@@ -356,6 +328,13 @@ function generateEtiqueta() {
             <div class="barcode-area">
                 <canvas id="barcodeCanvas"></canvas>
                 <div class="barcode-number">${selectedProduct.codigo_barra}</div>
+            </div>
+
+            <div style="text-align: center; margin-top: 15px;">
+                <button onclick="printEtiqueta()" 
+                        style="width: 80%; padding: 10px; background-color: #007bff; color: white; border: none; cursor: pointer;">
+                    Imprimir Etiqueta
+                </button>
             </div>
             
         </div>
@@ -374,4 +353,51 @@ function generateEtiqueta() {
     } else {
         console.error("JsBarcode no está cargado.");
     }
+}
+
+
+// =================================================================
+// 4. FUNCIÓN DE IMPRESIÓN
+// =================================================================
+
+function printEtiqueta() {
+    const content = document.getElementById('printableArea').innerHTML;
+    const originalBody = document.body.innerHTML;
+
+    // Temporalmente reemplaza el contenido del cuerpo para imprimir solo la etiqueta
+    document.body.innerHTML = content;
+
+    // Estilos temporales para que se imprima correctamente (evitando estilos de la interfaz)
+    // Nota: Es mejor usar media queries en el CSS, pero esto es un arreglo rápido
+    const tempStyle = document.createElement('style');
+    tempStyle.textContent = `
+        .etiqueta-container {
+            width: 80mm; /* Ancho típico de una impresora de etiquetas/recibos */
+            padding: 5px; 
+            border: 0; /* Quita el borde de la interfaz */
+            box-shadow: none; 
+        }
+        button {
+            display: none !important; /* Oculta el botón en la impresión */
+        }
+    `;
+    document.head.appendChild(tempStyle);
+
+    window.print();
+
+    // Restaura el contenido original de la página y remueve el estilo temporal
+    document.body.innerHTML = originalBody;
+    document.head.removeChild(tempStyle);
+    
+    // Es necesario recargar el estado de los selectores y listeners después de restaurar el DOM
+    document.addEventListener('DOMContentLoaded', () => {
+        document.getElementById('tier').addEventListener('change', updateFamiliaOptions);
+        document.getElementById('familia').addEventListener('change', updateProductOptions);
+        document.getElementById('productoFinal').addEventListener('change', generateEtiqueta);
+    }, { once: true });
+    
+    // Esto es un parche avanzado para restaurar la interactividad de la página
+    // después de window.print(). Lo más fácil es simplemente forzar la recarga
+    // después de la impresión si la restauración del DOM da problemas.
+    window.location.reload(); 
 }
