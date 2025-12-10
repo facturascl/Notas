@@ -1,349 +1,377 @@
+/**
+ * =================================================================
+ * ARCHIVO: app.js
+ * Lógica: Tier -> Familia -> Producto
+ * Actualizaciones: 
+ * 1. Estructura de datos con campo 'familia_key'.
+ * 2. Lógica de selectores anidados.
+ * 3. Función generateEtiqueta simplificada (solo Producto y Código de Barras/Números).
+ * =================================================================
+ */
+
 // =================================================================
-// 1. DEFINICIÓN DEL CATÁLOGO MAESTRO (132 PRODUCTOS)
-//    *** DATOS EXTRAÍDOS DIRECTAMENTE DE LA TABLA ADJUNTA ***
+// 1. DATOS ORIGINALES DEL CATÁLOGO (RAW DATA)
+// NG: Sin Graduación (Neutros y Clips)
+// MO: Monofocal (Monofocal + cualquier tratamiento)
+// PN: Progresivo Newton
+// NP: Progresivo Newton Plus
+// MI: Micas
 // =================================================================
 
-// Usamos esta estructura para manejar la granularidad de precios por TIER
 const RAW_CATALOG_DATA = [
     // TIER 1
-    { tier: "T1", descripcion: "CLIP ON", precio: 40000.00, graduacion_key: "NOGRAD", final_sku: "T1ClpOn" },
-    { tier: "T1", descripcion: "NEUTROS CON AR VERDE", precio: 56000.00, graduacion_key: "NOGRAD", final_sku: "T1LeNeArVr" },
-    { tier: "T1", descripcion: "NEUTROS POLARIZADO", precio: 104000.00, graduacion_key: "NOGRAD", final_sku: "T1LeNeSol" },
-    { tier: "T1", descripcion: "PARA COMPUTO NEUTROS", precio: 89000.00, graduacion_key: "NOGRAD", final_sku: "T1LeNeCom" },
-    { tier: "T1", descripcion: "LENTE MONOFOCAL - AR AZUL", precio: 177000.00, graduacion_key: "MONO", final_sku: "T1LeMoArAz" },
-    { tier: "T1", descripcion: "LENTE MONOFOCAL - HI", precio: 177000.00, graduacion_key: "MONO", final_sku: "T1LeMoHi" },
-    { tier: "T1", descripcion: "LENTE MONOFOCAL - AR AZUL + HI", precio: 177000.00, graduacion_key: "MONO", final_sku: "T1LeMoArAzHi" },
-    { tier: "T1", descripcion: "LENTE MONOFOCAL POLARIZADO", precio: 188000.00, graduacion_key: "MONO", final_sku: "T1LeMoSol" },
-    { tier: "T1", descripcion: "LENTE MONOFOCAL FOTOCROMATICO", precio: 188000.00, graduacion_key: "MONO", final_sku: "T1LeMoFo" },
-    { tier: "T1", descripcion: "LENTE PROGRESIVO NEWTON", precio: 246000.00, graduacion_key: "NEWTON", final_sku: "T1LeProNew" },
-    { tier: "T1", descripcion: "LENTE PROGRESIVO NEWTON + AR AZUL", precio: 277000.00, graduacion_key: "NEWTON", final_sku: "T1LeProNewArAz" },
-    { tier: "T1", descripcion: "LENTE PROGRESIVO NEWTON POLARIZADO", precio: 297000.00, graduacion_key: "NEWTON", final_sku: "T1LeProNewSol" },
-    { tier: "T1", descripcion: "LENTE PROGRESIVO NEWTON + FOTO", precio: 297000.00, graduacion_key: "NEWTON", final_sku: "T1LeProNewFo" },
-    { tier: "T1", descripcion: "LENTE PROGRESIVO NEWTON + FOTO + HI", precio: 316000.00, graduacion_key: "NEWTON", final_sku: "T1LeProNewFoHi" },
-    { tier: "T1", descripcion: "LENTE PROGRESIVO NEWTON + HI", precio: 277000.00, graduacion_key: "NEWTON", final_sku: "T1LeProNewHi" },
-    { tier: "T1", descripcion: "LENTE PROGRESIVO NEWTON + HI + AR AZUL", precio: 306000.00, graduacion_key: "NEWTON", final_sku: "T1LeProNewHiArAz" },
-    { tier: "T1", descripcion: "LENTE PROGRESIVO NEWPLUS", precio: 288000.00, graduacion_key: "NEWPLUS", final_sku: "T1LeProNewPl" },
-    { tier: "T1", descripcion: "LENTE PROGRESIVO NEWPLUS + AR AZUL", precio: 318000.00, graduacion_key: "NEWPLUS", final_sku: "T1LeProNewPlArAz" },
-    { tier: "T1", descripcion: "LENTE PROGRESIVO NEWPLUS POLARIZADO", precio: 338000.00, graduacion_key: "NEWPLUS", final_sku: "T1LeProNewPlSol" },
-    { tier: "T1", descripcion: "LENTE PROGRESIVO NEWPLUS + FOTO", precio: 338000.00, graduacion_key: "NEWPLUS", final_sku: "T1LeProNewPlFo" },
-    { tier: "T1", descripcion: "LENTE PROGRESIVO NEWPLUS + FOTO + HI", precio: 358000.00, graduacion_key: "NEWPLUS", final_sku: "T1LeProNewPlFoHi" },
-    { tier: "T1", descripcion: "LENTE PROGRESIVO NEWPLUS + HI", precio: 318000.00, graduacion_key: "NEWPLUS", final_sku: "T1LeProNewPlHi" },
-    { tier: "T1", descripcion: "LENTE PROGRESIVO NEWPLUS + HI + AR AZUL", precio: 348000.00, graduacion_key: "NEWPLUS", final_sku: "T1LeProNewPlHiArAz" },
+    { tier: "T1", descripcion: "CLIP - ONS", precio: 40000.00, familia_key: "NG", graduacion_key: "NOGRAD", sku_con_apostrofe: "T1ClpOn", codigo_barra: "2000409297917" },
+    { tier: "T1", descripcion: "LENT1 NEUTROS CON AR VERDE", precio: 89000.00, familia_key: "NG", graduacion_key: "NOGRAD", sku_con_apostrofe: "T1LeNeArVr", codigo_barra: "2000409297924" },
+    { tier: "T1", descripcion: "LENT1 DE SOL NEUTRO", precio: 89000.00, familia_key: "NG", graduacion_key: "NOGRAD", sku_con_apostrofe: "T1LeNeSol", codigo_barra: "2000409297931" },
+    { tier: "T1", descripcion: "LENT1 PA LA COMPU NEUTROS", precio: 89000.00, familia_key: "NG", graduacion_key: "NOGRAD", sku_con_apostrofe: "T1LeNeCom", codigo_barra: "2000409297948" },
     
+    { tier: "T1", descripcion: "LENT1 MONOFOCAL+AR AZUL", precio: 128000.00, familia_key: "MO", graduacion_key: "GRAD", sku_con_apostrofe: "T1LeMoArAz", codigo_barra: "2000409297955" },
+    { tier: "T1", descripcion: "LENT1 MONOFOCAL+HI", precio: 138000.00, familia_key: "MO", graduacion_key: "GRAD", sku_con_apostrofe: "T1LeMoHi", codigo_barra: "2000409297962" },
+    { tier: "T1", descripcion: "LENT1 MONO+ARAZUL+HI", precio: 177000.00, familia_key: "MO", graduacion_key: "GRAD", sku_con_apostrofe: "T1LeMoArAzHi", codigo_barra: "2000409297979" },
+    { tier: "T1", descripcion: "LENT1 DE SOL GRADUADOS", precio: 188000.00, familia_key: "MO", graduacion_key: "GRAD", sku_con_apostrofe: "T1LeMoSol", codigo_barra: "2000409297986" },
+    { tier: "T1", descripcion: "LENT1 MONOFOCAL FOTO", precio: 148000.00, familia_key: "MO", graduacion_key: "GRAD", sku_con_apostrofe: "T1LeMoFo", codigo_barra: "2000409297993" },
+    
+    { tier: "T1", descripcion: "LENT1 PROGRESIVO NEWTON", precio: 188000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T1LeProNew", codigo_barra: "2000409298006" },
+    { tier: "T1", descripcion: "LENT1 PROGRE NEWTON + AR AZUL", precio: 227000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T1LeProNewArAz", codigo_barra: "2000409298013" },
+    { tier: "T1", descripcion: "LENT1 PROGRE NEWTON + POLARIZADO", precio: 277000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T1LeProNewSol", codigo_barra: "2000409298020" },
+    { tier: "T1", descripcion: "LENT1 PROGRESIVO NEWTON + FOTO", precio: 257000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T1LeProNewFo", codigo_barra: "2000409298037" },
+    { tier: "T1", descripcion: "LENT1 PROGRE NEWTON+FOTO+HI", precio: 207000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T1LeProNewFoHi", codigo_barra: "2000409298044" },
+    { tier: "T1", descripcion: "LENT1 PROGRE NEWTON + HI", precio: 237000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T1LeProNewHi", codigo_barra: "2000409298051" },
+    { tier: "T1", descripcion: "LENT1 PROGRE NEWTON+HI+ARAZUL", precio: 177000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T1LeProNewHiArAz", codigo_barra: "2000409298068" },
+    
+    { tier: "T1", descripcion: "LENT1 PROGRESIVO NEWTON PLUS", precio: 308000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T1LeProNewPl", codigo_barra: "2000409298075" },
+    { tier: "T1", descripcion: "LENT1 PROGRE NEWPLUS + AR AZUL", precio: 347000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T1LeProNewPlArAz", codigo_barra: "2000409298082" },
+    { tier: "T1", descripcion: "LENT1 PROGRE NEWPLUS + POLARIZADO", precio: 397000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T1LeProNewPlSol", codigo_barra: "2000409298099" },
+    { tier: "T1", descripcion: "LENT1 PROGRESIVO NEWPLUS + FOTO", precio: 158000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T1LeProNewPlFo", codigo_barra: "2000409298105" },
+    { tier: "T1", descripcion: "LENT1 PROGRENEWPLUS+FOTO+HI", precio: 426000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T1LeProNewPlFoHi", codigo_barra: "2000409298112" },
+    { tier: "T1", descripcion: "LENT1 PROGRE NEWPLUS + HI", precio: 357000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T1LeProNewPlHi", codigo_barra: "2000409298129" },
+    { tier: "T1", descripcion: "LENT1 PROGRE NEWPLUS+HI+ARAZUL", precio: 396000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T1LeProNewPlHiArAz", codigo_barra: "2000409298136" },
+
     // TIER 2
-    { tier: "T2", descripcion: "CLIP ON", precio: 36000.00, graduacion_key: "NOGRAD", final_sku: "T2ClpOn" },
-    { tier: "T2", descripcion: "NEUTROS CON AR VERDE", precio: 51000.00, graduacion_key: "NOGRAD", final_sku: "T2LeNeArVr" },
-    { tier: "T2", descripcion: "NEUTROS POLARIZADO", precio: 94000.00, graduacion_key: "NOGRAD", final_sku: "T2LeNeSol" },
-    { tier: "T2", descripcion: "PARA COMPUTO NEUTROS", precio: 80000.00, graduacion_key: "NOGRAD", final_sku: "T2LeNeCom" },
-    { tier: "T2", descripcion: "LENTE MONOFOCAL - AR AZUL", precio: 159000.00, graduacion_key: "MONO", final_sku: "T2LeMoArAz" },
-    { tier: "T2", descripcion: "LENTE MONOFOCAL - HI", precio: 159000.00, graduacion_key: "MONO", final_sku: "T2LeMoHi" },
-    { tier: "T2", descripcion: "LENTE MONOFOCAL - AR AZUL + HI", precio: 159000.00, graduacion_key: "MONO", final_sku: "T2LeMoArAzHi" },
-    { tier: "T2", descripcion: "LENTE MONOFOCAL POLARIZADO", precio: 169000.00, graduacion_key: "MONO", final_sku: "T2LeMoSol" },
-    { tier: "T2", descripcion: "LENTE MONOFOCAL FOTOCROMATICO", precio: 169000.00, graduacion_key: "MONO", final_sku: "T2LeMoFo" },
-    { tier: "T2", descripcion: "LENTE PROGRESIVO NEWTON", precio: 221000.00, graduacion_key: "NEWTON", final_sku: "T2LeProNew" },
-    { tier: "T2", descripcion: "LENTE PROGRESIVO NEWTON + AR AZUL", precio: 249000.00, graduacion_key: "NEWTON", final_sku: "T2LeProNewArAz" },
-    { tier: "T2", descripcion: "LENTE PROGRESIVO NEWTON POLARIZADO", precio: 267000.00, graduacion_key: "NEWTON", final_sku: "T2LeProNewSol" },
-    { tier: "T2", descripcion: "LENTE PROGRESIVO NEWTON + FOTO", precio: 267000.00, graduacion_key: "NEWTON", final_sku: "T2LeProNewFo" },
-    { tier: "T2", descripcion: "LENTE PROGRESIVO NEWTON + FOTO + HI", precio: 284000.00, graduacion_key: "NEWTON", final_sku: "T2LeProNewFoHi" },
-    { tier: "T2", descripcion: "LENTE PROGRESIVO NEWTON + HI", precio: 249000.00, graduacion_key: "NEWTON", final_sku: "T2LeProNewHi" },
-    { tier: "T2", descripcion: "LENTE PROGRESIVO NEWTON + HI + AR AZUL", precio: 275000.00, graduacion_key: "NEWTON", final_sku: "T2LeProNewHiArAz" },
-    { tier: "T2", descripcion: "LENTE PROGRESIVO NEWPLUS", precio: 259000.00, graduacion_key: "NEWPLUS", final_sku: "T2LeProNewPl" },
-    { tier: "T2", descripcion: "LENTE PROGRESIVO NEWPLUS + AR AZUL", precio: 286000.00, graduacion_key: "NEWPLUS", final_sku: "T2LeProNewPlArAz" },
-    { tier: "T2", descripcion: "LENTE PROGRESIVO NEWPLUS POLARIZADO", precio: 304000.00, graduacion_key: "NEWPLUS", final_sku: "T2LeProNewPlSol" },
-    { tier: "T2", descripcion: "LENTE PROGRESIVO NEWPLUS + FOTO", precio: 304000.00, graduacion_key: "NEWPLUS", final_sku: "T2LeProNewPlFo" },
-    { tier: "T2", descripcion: "LENTE PROGRESIVO NEWPLUS + FOTO + HI", precio: 322000.00, graduacion_key: "NEWPLUS", final_sku: "T2LeProNewPlFoHi" },
-    { tier: "T2", descripcion: "LENTE PROGRESIVO NEWPLUS + HI", precio: 286000.00, graduacion_key: "NEWPLUS", final_sku: "T2LeProNewPlHi" },
-    { tier: "T2", descripcion: "LENTE PROGRESIVO NEWPLUS + HI + AR AZUL", precio: 313000.00, graduacion_key: "NEWPLUS", final_sku: "T2LeProNewPlHiArAz" },
-
+    { tier: "T2", descripcion: "LENT2 NEUTROS CON AR VERDE", precio: 99000.00, familia_key: "NG", graduacion_key: "NOGRAD", sku_con_apostrofe: "T2LeNeArVr", codigo_barra: "2000409298143" },
+    { tier: "T2", descripcion: "LENT2 DE SOL NEUTRO", precio: 99000.00, familia_key: "NG", graduacion_key: "NOGRAD", sku_con_apostrofe: "T2LeNeSol", codigo_barra: "2000409298150" },
+    { tier: "T2", descripcion: "LENT2 PA LA COMPU NEUTROS", precio: 99000.00, familia_key: "NG", graduacion_key: "NOGRAD", sku_con_apostrofe: "T2LeNeCom", codigo_barra: "2000409298167" },
+    
+    { tier: "T2", descripcion: "LENT2 MONOFOCAL + AR AZUL", precio: 138000.00, familia_key: "MO", graduacion_key: "GRAD", sku_con_apostrofe: "T2LeMoArAz", codigo_barra: "2000409298174" },
+    { tier: "T2", descripcion: "LENT2 MONOFOCAL + HI", precio: 148000.00, familia_key: "MO", graduacion_key: "GRAD", sku_con_apostrofe: "T2LeMoHi", codigo_barra: "2000409298181" },
+    { tier: "T2", descripcion: "LENT2 MONO + AR AZUL + HI", precio: 187000.00, familia_key: "MO", graduacion_key: "GRAD", sku_con_apostrofe: "T2LeMoArAzHi", codigo_barra: "2000409298198" },
+    { tier: "T2", descripcion: "LENT2 DE SOL GRADUADOS", precio: 188000.00, familia_key: "MO", graduacion_key: "GRAD", sku_con_apostrofe: "T2LeMoSol", codigo_barra: "2000409298204" },
+    { tier: "T2", descripcion: "LENT2 MONOFOCAL FOTO", precio: 168000.00, familia_key: "MO", graduacion_key: "GRAD", sku_con_apostrofe: "T2LeMoFo", codigo_barra: "2000409298211" },
+    
+    { tier: "T2", descripcion: "LENT2 PROGRESIVO NEWTON", precio: 198000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T2LeProNew", codigo_barra: "2000409298228" },
+    { tier: "T2", descripcion: "LENT2 PROGRE NEWTON + AR AZUL", precio: 237000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T2LeProNewArAz", codigo_barra: "2000409298235" },
+    { tier: "T2", descripcion: "LENT2 PROGRE NEWTON + POLARIZADO", precio: 188000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T2LeProNewSol", codigo_barra: "2000409298242" },
+    { tier: "T2", descripcion: "LENT2 PROGRESIVO NEWTON + FOTO", precio: 168000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T2LeProNewFo", codigo_barra: "2000409298259" },
+    { tier: "T2", descripcion: "LENT2 PROGRE NEWTON+FOTO+HI", precio: 436000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T2LeProNewFoHi", codigo_barra: "2000409298266" },
+    { tier: "T2", descripcion: "LENT2 PROGRE NEWTON + HI", precio: 247000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T2LeProNewHi", codigo_barra: "2000409298273" },
+    { tier: "T2", descripcion: "LENT2 PROGRE NEWTON+HI+AR AZUL", precio: 286000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T2LeProNewHiArAz", codigo_barra: "2000409298280" },
+    
+    { tier: "T2", descripcion: "LENT2 PROGRESIVO NEWTON PLUS", precio: 318000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T2LeProNewPl", codigo_barra: "2000409298297" },
+    { tier: "T2", descripcion: "LENT2 PROGRE NEWPLUS + AR AZUL", precio: 456000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T2LeProNewPlArAz", codigo_barra: "2000409298303" },
+    { tier: "T2", descripcion: "LENT2 PROGRE NEWPLUS + POLARIZADO", precio: 407000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T2LeProNewPlSol", codigo_barra: "2000409298310" },
+    { tier: "T2", descripcion: "LENT2 PROGRESIVO NEWPLUS + FOTO", precio: 387000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T2LeProNewPlFo", codigo_barra: "2000409298327" },
+    { tier: "T2", descripcion: "LENT2 PROGRENEWPLUS+FOTO+HI", precio: 436000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T2LeProNewPlFoHi", codigo_barra: "2000409298334" },
+    { tier: "T2", descripcion: "LENT2 PROGRE NEWPLUS + HI", precio: 367000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T2LeProNewPlHi", codigo_barra: "2000409298341" },
+    { tier: "T2", descripcion: "LENT2 PROGRE NEWPLUS+HI+ARAZUL", precio: 406000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T2LeProNewPlHiArAz", codigo_barra: "2000409298358" },
+    
     // TIER 3
-    { tier: "T3", descripcion: "LENTE DE SOL NEUTRO", precio: 119000.00, graduacion_key: "NOGRAD", final_sku: "T3LeNeSol" }, // Lente de sol neutro
-    { tier: "T3", descripcion: "LENTE DE SOL GRADUADO", precio: 188000.00, graduacion_key: "MONO", final_sku: "T3LeMoSol" }, // Lente de sol graduado
-    { tier: "T3", descripcion: "LENTE MONOFOCAL - AR AZUL", precio: 159000.00, graduacion_key: "MONO", final_sku: "T3LeMoArAz" },
-    { tier: "T3", descripcion: "LENTE MONOFOCAL - HI", precio: 168000.00, graduacion_key: "MONO", final_sku: "T3LeMoHi" },
-    { tier: "T3", descripcion: "LENTE MONOFOCAL - AR AZUL + HI", precio: 177000.00, graduacion_key: "MONO", final_sku: "T3LeMoArAzHi" },
-    { tier: "T3", descripcion: "LENTE PROGRESIVO NEWTON", precio: 207000.00, graduacion_key: "NEWTON", final_sku: "T3LeProNew" },
-    { tier: "T3", descripcion: "LENTE PROGRESIVO NEWTON + AR AZUL", precio: 227000.00, graduacion_key: "NEWTON", final_sku: "T3LeProNewArAz" },
-    { tier: "T3", descripcion: "LENTE PROGRESIVO NEWTON POLARIZADO", precio: 267000.00, graduacion_key: "NEWTON", final_sku: "T3LeProNewSol" },
-    { tier: "T3", descripcion: "LENTE PROGRESIVO NEWTON + FOTO", precio: 267000.00, graduacion_key: "NEWTON", final_sku: "T3LeProNewFo" },
-    { tier: "T3", descripcion: "LENTE PROGRESIVO NEWTON + FOTO + HI", precio: 287000.00, graduacion_key: "NEWTON", final_sku: "T3LeProNewFoHi" },
-    { tier: "T3", descripcion: "LENTE PROGRESIVO NEWTON + HI", precio: 227000.00, graduacion_key: "NEWTON", final_sku: "T3LeProNewHi" },
-    { tier: "T3", descripcion: "LENTE PROGRESIVO NEWTON + HI + AR AZUL", precio: 257000.00, graduacion_key: "NEWTON", final_sku: "T3LeProNewHiArAz" },
-    { tier: "T3", descripcion: "LENTE PROGRESIVO NEWPLUS", precio: 247000.00, graduacion_key: "NEWPLUS", final_sku: "T3LeProNewPl" },
-    { tier: "T3", descripcion: "LENTE PROGRESIVO NEWPLUS + AR AZUL", precio: 267000.00, graduacion_key: "NEWPLUS", final_sku: "T3LeProNewPlArAz" },
-    { tier: "T3", descripcion: "LENTE PROGRESIVO NEWPLUS POLARIZADO", precio: 307000.00, graduacion_key: "NEWPLUS", final_sku: "T3LeProNewPlSol" },
-    { tier: "T3", descripcion: "LENTE PROGRESIVO NEWPLUS + FOTO", precio: 307000.00, graduacion_key: "NEWPLUS", final_sku: "T3LeProNewPlFo" },
-    { tier: "T3", descripcion: "LENTE PROGRESIVO NEWPLUS + FOTO + HI", precio: 327000.00, graduacion_key: "NEWPLUS", final_sku: "T3LeProNewPlFoHi" },
-    { tier: "T3", descripcion: "LENTE PROGRESIVO NEWPLUS + HI", precio: 267000.00, graduacion_key: "NEWPLUS", final_sku: "T3LeProNewPlHi" },
-    { tier: "T3", descripcion: "LENTE PROGRESIVO NEWPLUS + HI + AR AZUL", precio: 297000.00, graduacion_key: "NEWPLUS", final_sku: "T3LeProNewPlHiArAz" },
-    { tier: "T3", descripcion: "NEUTROS CON AR VERDE", precio: 51000.00, graduacion_key: "NOGRAD", final_sku: "T3LeNeArVr" },
-    { tier: "T3", descripcion: "PARA COMPUTO NEUTROS", precio: 64000.00, graduacion_key: "NOGRAD", final_sku: "T3LeNeCom" },
-
+    { tier: "T3", descripcion: "LENT3 NEUTROS CON AR VERDE", precio: 119000.00, familia_key: "NG", graduacion_key: "NOGRAD", sku_con_apostrofe: "T3LeNeArVr", codigo_barra: "2000409298365" },
+    { tier: "T3", descripcion: "LENT3 DE SOL NEUTRO", precio: 119000.00, familia_key: "NG", graduacion_key: "NOGRAD", sku_con_apostrofe: "T3LeNeSol", codigo_barra: "2000409298372" },
+    { tier: "T3", descripcion: "LENT3 PA LA COMPU NEUTROS", precio: 119000.00, familia_key: "NG", graduacion_key: "NOGRAD", sku_con_apostrofe: "T3LeNeCom", codigo_barra: "2000409298389" },
+    
+    { tier: "T3", descripcion: "LENT3 MONOFOCAL + AR AZUL", precio: 158000.00, familia_key: "MO", graduacion_key: "GRAD", sku_con_apostrofe: "T3LeMoArAz", codigo_barra: "2000409298396" },
+    { tier: "T3", descripcion: "LENT3 MONOFOCAL + HI", precio: 168000.00, familia_key: "MO", graduacion_key: "GRAD", sku_con_apostrofe: "T3LeMoHi", codigo_barra: "2000409298402" },
+    { tier: "T3", descripcion: "LENT3 MONO + AR AZUL + HI", precio: 207000.00, familia_key: "MO", graduacion_key: "GRAD", sku_con_apostrofe: "T3LeMoArAzHi", codigo_barra: "2000409298419" },
+    { tier: "T3", descripcion: "LENT3 DE SOL GRADUADOS", precio: 208000.00, familia_key: "MO", graduacion_key: "GRAD", sku_con_apostrofe: "T3LeMoSol", codigo_barra: "2000409298426" },
+    { tier: "T3", descripcion: "LENT3 MONOFOCAL FOTO", precio: 188000.00, familia_key: "MO", graduacion_key: "GRAD", sku_con_apostrofe: "T3LeMoFo", codigo_barra: "2000409298433" },
+    
+    { tier: "T3", descripcion: "LENT3 PROGRESIVO NEWTON", precio: 218000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T3LeProNew", codigo_barra: "2000409298440" },
+    { tier: "T3", descripcion: "LENT3 PROGRE NEWTON + AR AZUL", precio: 227000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T3LeProNewArAz", codigo_barra: "2000409298457" },
+    { tier: "T3", descripcion: "LENT3 PROGRE NEWTON + POLARIZADO", precio: 307000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T3LeProNewSol", codigo_barra: "2000409298464" },
+    { tier: "T3", descripcion: "LENT3 PROGRESIVO NEWTON + FOTO", precio: 307000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T3LeProNewFo", codigo_barra: "2000409298471" },
+    { tier: "T3", descripcion: "LENT3 PROGRE NEWTON+FOTO+HI", precio: 356000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T3LeProNewFoHi", codigo_barra: "2000409298488" },
+    { tier: "T3", descripcion: "LENT3 PROGRE NEWTON + HI", precio: 267000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T3LeProNewHi", codigo_barra: "2000409298495" },
+    { tier: "T3", descripcion: "LENT3 PROGRE NEWTON+HI IN+ARAZUL", precio: 207000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T3LeProNewHiArAz", codigo_barra: "2000409298501" },
+    
+    { tier: "T3", descripcion: "LENT3 PROGRESIVO NEWTON PLUS", precio: 338000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T3LeProNewPl", codigo_barra: "2000409298518" },
+    { tier: "T3", descripcion: "LENT3 PROGRE NEWPLUS + AR AZUL", precio: 377000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T3LeProNewPlArAz", codigo_barra: "2000409298525" },
+    { tier: "T3", descripcion: "LENT3 PROGRE NEWPLUS + POLARIZADO", precio: 427000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T3LeProNewPlSol", codigo_barra: "2000409298532" },
+    { tier: "T3", descripcion: "LENT3 PROGRESIVO NEWPLUS + FOTO", precio: 407000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T3LeProNewPlFo", codigo_barra: "2000409298549" },
+    { tier: "T3", descripcion: "LENT3 PROGRENEWPLUS+FOTO+HI", precio: 456000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T3LeProNewPlFoHi", codigo_barra: "2000409298556" },
+    { tier: "T3", descripcion: "LENT3 PROGRE NEWPLUS + HI", precio: 387000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T3LeProNewPlHi", codigo_barra: "2000409298563" },
+    { tier: "T3", descripcion: "LENT3 PROGRE NEWPLUS+HI+ARAZUL", precio: 426000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T3LeProNewPlHiArAz", codigo_barra: "2000409298570" },
+    
     // TIER 4
-    { tier: "T4", descripcion: "CLIP ON", precio: 32000.00, graduacion_key: "NOGRAD", final_sku: "T4ClpOn" },
-    { tier: "T4", descripcion: "LENTE MONOFOCAL - AR AZUL", precio: 119000.00, graduacion_key: "MONO", final_sku: "T4LeMoArAz" },
-    { tier: "T4", descripcion: "LENTE MONOFOCAL - HI", precio: 159000.00, graduacion_key: "MONO", final_sku: "T4LeMoHi" },
-    { tier: "T4", descripcion: "LENTE MONOFOCAL - AR AZUL + HI", precio: 168000.00, graduacion_key: "MONO", final_sku: "T4LeMoArAzHi" },
-    { tier: "T4", descripcion: "LENTE MONOFOCAL POLARIZADO", precio: 188000.00, graduacion_key: "MONO", final_sku: "T4LeMoSol" },
-    { tier: "T4", descripcion: "LENTE MONOFOCAL FOTOCROMATICO", precio: 168000.00, graduacion_key: "MONO", final_sku: "T4LeMoFo" },
-    { tier: "T4", descripcion: "LENTE PROGRESIVO NEWTON", precio: 196000.00, graduacion_key: "NEWTON", final_sku: "T4LeProNew" },
-    { tier: "T4", descripcion: "LENTE PROGRESIVO NEWTON + AR AZUL", precio: 207000.00, graduacion_key: "NEWTON", final_sku: "T4LeProNewArAz" },
-    { tier: "T4", descripcion: "LENTE PROGRESIVO NEWTON POLARIZADO", precio: 267000.00, graduacion_key: "NEWTON", final_sku: "T4LeProNewSol" },
-    { tier: "T4", descripcion: "LENTE PROGRESIVO NEWTON + FOTO", precio: 267000.00, graduacion_key: "NEWTON", final_sku: "T4LeProNewFo" },
-    { tier: "T4", descripcion: "LENTE PROGRESIVO NEWTON + FOTO + HI", precio: 287000.00, graduacion_key: "NEWTON", final_sku: "T4LeProNewFoHi" },
-    { tier: "T4", descripcion: "LENTE PROGRESIVO NEWTON + HI", precio: 207000.00, graduacion_key: "NEWTON", final_sku: "T4LeProNewHi" },
-    { tier: "T4", descripcion: "LENTE PROGRESIVO NEWTON + HI + AR AZUL", precio: 237000.00, graduacion_key: "NEWTON", final_sku: "T4LeProNewHiArAz" },
-    { tier: "T4", descripcion: "LENTE PROGRESIVO NEWPLUS", precio: 227000.00, graduacion_key: "NEWPLUS", final_sku: "T4LeProNewPl" },
-    { tier: "T4", descripcion: "LENTE PROGRESIVO NEWPLUS + AR AZUL", precio: 247000.00, graduacion_key: "NEWPLUS", final_sku: "T4LeProNewPlArAz" },
-    { tier: "T4", descripcion: "LENTE PROGRESIVO NEWPLUS POLARIZADO", precio: 297000.00, graduacion_key: "NEWPLUS", final_sku: "T4LeProNewPlSol" },
-    { tier: "T4", descripcion: "LENTE PROGRESIVO NEWPLUS + FOTO", precio: 297000.00, graduacion_key: "NEWPLUS", final_sku: "T4LeProNewPlFo" },
-    { tier: "T4", descripcion: "LENTE PROGRESIVO NEWPLUS + FOTO + HI", precio: 316000.00, graduacion_key: "NEWPLUS", final_sku: "T4LeProNewPlFoHi" },
-    { tier: "T4", descripcion: "LENTE PROGRESIVO NEWPLUS + HI", precio: 247000.00, graduacion_key: "NEWPLUS", final_sku: "T4LeProNewPlHi" },
-    { tier: "T4", descripcion: "LENTE PROGRESIVO NEWPLUS + HI + AR AZUL", precio: 277000.00, graduacion_key: "NEWPLUS", final_sku: "T4LeProNewPlHiArAz" },
-    { tier: "T4", descripcion: "LENTE DE SOL NEUTRO", precio: 104000.00, graduacion_key: "NOGRAD", final_sku: "T4LeNeSol" },
-    { tier: "T4", descripcion: "LENTE DE SOL GRADUADO", precio: 168000.00, graduacion_key: "MONO", final_sku: "T4LeMoSol" },
-    { tier: "T4", descripcion: "NEUTROS CON AR VERDE", precio: 45000.00, graduacion_key: "NOGRAD", final_sku: "T4LeNeArVr" },
-    { tier: "T4", descripcion: "PARA COMPUTO NEUTROS", precio: 64000.00, graduacion_key: "NOGRAD", final_sku: "T4LeNeCom" },
+    { tier: "T4", descripcion: "LENT4 NEUTROS CON AR VERDE", precio: 139000.00, familia_key: "NG", graduacion_key: "NOGRAD", sku_con_apostrofe: "T4LeNeArVr", codigo_barra: "2000409298587" },
+    { tier: "T4", descripcion: "LENT4 DE SOL NEUTRO", precio: 139000.00, familia_key: "NG", graduacion_key: "NOGRAD", sku_con_apostrofe: "T4LeNeSol", codigo_barra: "2000409298594" },
+    { tier: "T4", descripcion: "LENT4 PA LA COMPU NEUTROS", precio: 139000.00, familia_key: "NG", graduacion_key: "NOGRAD", sku_con_apostrofe: "T4LeNeCom", codigo_barra: "2000409298600" },
+    
+    { tier: "T4", descripcion: "LENT4 MONOFOCAL + AR AZUL", precio: 178000.00, familia_key: "MO", graduacion_key: "GRAD", sku_con_apostrofe: "T4LeMoArAz", codigo_barra: "2000409298617" },
+    { tier: "T4", descripcion: "LENT4 MONOFOCAL + HI", precio: 188000.00, familia_key: "MO", graduacion_key: "GRAD", sku_con_apostrofe: "T4LeMoHi", codigo_barra: "2000409298624" },
+    { tier: "T4", descripcion: "LENT4 MONO + AR AZUL + HI", precio: 227000.00, familia_key: "MO", graduacion_key: "GRAD", sku_con_apostrofe: "T4LeMoArAzHi", codigo_barra: "2000409298631" },
+    { tier: "T4", descripcion: "LENT4 DE SOL GRADUADOS", precio: 139016.00, familia_key: "MO", graduacion_key: "GRAD", sku_con_apostrofe: "T4LeMoSol", codigo_barra: "2000409298648" },
+    { tier: "T4", descripcion: "LENT4 MONOFOCAL FOTO", precio: 208000.00, familia_key: "MO", graduacion_key: "GRAD", sku_con_apostrofe: "T4LeMoFo", codigo_barra: "2000409298655" },
+    
+    { tier: "T4", descripcion: "LENT4 PROGRESIVO NEWTON", precio: 238000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T4LeProNew", codigo_barra: "2000409298662" },
+    { tier: "T4", descripcion: "LENT4 PROGRE NEWTON + AR AZUL", precio: 277000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T4LeProNewArAz", codigo_barra: "2000409298679" },
+    { tier: "T4", descripcion: "LENT4 PROGRE NEWTON + POLARIZADO", precio: 327000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T4LeProNewSol", codigo_barra: "2000409298686" },
+    { tier: "T4", descripcion: "LENT4 PROGRESIVO NEWTON + FOTO", precio: 307000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T4LeProNewFo", codigo_barra: "2000409298693" },
+    { tier: "T4", descripcion: "LENT4 PROGRE NEWTON+FOTO+HI", precio: 356000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T4LeProNewFoHi", codigo_barra: "2000409298709" },
+    { tier: "T4", descripcion: "LENT4 PROGRE NEWTON + HI", precio: 287000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T4LeProNewHi", codigo_barra: "2000409298716" },
+    { tier: "T4", descripcion: "LENT4 PROGRE NEWTON+HI+ARAZUL", precio: 326000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T4LeProNewHiArAz", codigo_barra: "2000409298723" },
+    
+    { tier: "T4", descripcion: "LENT4 PROGRESIVO NEWTON PLUS", precio: 358000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T4LeProNewPl", codigo_barra: "2000409298730" },
+    { tier: "T4", descripcion: "LENT4 PROGRE NEWPLUS + AR AZUL", precio: 397000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T4LeProNewPlArAz", codigo_barra: "2000409298747" },
+    { tier: "T4", descripcion: "LENT4 PROGRE NEWPLUS + POLARIZADO", precio: 447000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T4LeProNewPlSol", codigo_barra: "2000409298754" },
+    { tier: "T4", descripcion: "LENT4 PROGRESIVO NEWPLUS + FOTO", precio: 427000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T4LeProNewPlFo", codigo_barra: "2000409298761" },
+    { tier: "T4", descripcion: "LENT4 PROGRENEWPLUS+FOTO+HI", precio: 476000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T4LeProNewPlFoHi", codigo_barra: "2000409298778" },
+    { tier: "T4", descripcion: "LENT4 PROGRE NEWPLUS + HI", precio: 407000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T4LeProNewPlHi", codigo_barra: "2000409298785" },
+    { tier: "T4", descripcion: "LENT4 PROGRE NEWPLUS+HI+ARAZUL", precio: 446000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T4LeProNewPlHiArAz", codigo_barra: "2000409298792" },
+    
+    // TIER 5
+    { tier: "T5", descripcion: "LENT5 NEUTROS CON AR VERDE", precio: 159000.00, familia_key: "NG", graduacion_key: "NOGRAD", sku_con_apostrofe: "T5LeNeArVr", codigo_barra: "2000409298808" },
+    { tier: "T5", descripcion: "LENT5 DE SOL NEUTRO", precio: 159000.00, familia_key: "NG", graduacion_key: "NOGRAD", sku_con_apostrofe: "T5LeNeSol", codigo_barra: "2000409298815" },
+    { tier: "T5", descripcion: "LENT5 PA LA COMPU NEUTROS", precio: 159000.00, familia_key: "NG", graduacion_key: "NOGRAD", sku_con_apostrofe: "T5LeNeCom", codigo_barra: "2000409298822" },
+    
+    { tier: "T5", descripcion: "LENT5 MONOFOCAL + AR AZUL", precio: 198000.00, familia_key: "MO", graduacion_key: "GRAD", sku_con_apostrofe: "T5LeMoArAz", codigo_barra: "2000409298839" },
+    { tier: "T5", descripcion: "LENT5 MONOFOCAL + HI", precio: 208000.00, familia_key: "MO", graduacion_key: "GRAD", sku_con_apostrofe: "T5LeMoHi", codigo_barra: "2000409298846" },
+    { tier: "T5", descripcion: "LENT5 MONO + AR AZUL+ HI", precio: 247000.00, familia_key: "MO", graduacion_key: "GRAD", sku_con_apostrofe: "T5LeMoArAzHi", codigo_barra: "2000409298853" },
+    { tier: "T5", descripcion: "LENT5 DE SOL GRADUADOS", precio: 248000.00, familia_key: "MO", graduacion_key: "GRAD", sku_con_apostrofe: "T5LeMoSol", codigo_barra: "2000409298860" },
+    { tier: "T5", descripcion: "LENT5 MONOFOCAL FOTOCROMÁTICOS", precio: 228000.00, familia_key: "MO", graduacion_key: "GRAD", sku_con_apostrofe: "T5LeMoFo", codigo_barra: "2000409298877" },
+    
+    { tier: "T5", descripcion: "LENT5 PROGRESIVO NEWTON", precio: 258000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T5LeProNew", codigo_barra: "2000409298884" },
+    { tier: "T5", descripcion: "LENT5 PROGRE NEWTON + AR AZUL", precio: 297000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T5LeProNewArAz", codigo_barra: "2000409298891" },
+    { tier: "T5", descripcion: "LENT5 PROGRE NEWTON + POLARIZADO", precio: 347000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T5LeProNewSol", codigo_barra: "2000409298907" },
+    { tier: "T5", descripcion: "LENT5 PROGRESIVO NEWTON + FOTO", precio: 327000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T5LeProNewFo", codigo_barra: "2000409298914" },
+    { tier: "T5", descripcion: "LENT5 PROGRE NEWTON+FOTO+HI", precio: 376000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T5LeProNewFoHi", codigo_barra: "2000409298921" },
+    { tier: "T5", descripcion: "LENT5 PROGRE NEWTON + HI", precio: 307000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T5LeProNewHi", codigo_barra: "2000409298938" },
+    { tier: "T5", descripcion: "LENT5 PROGRE NEWTON+HI+ARAZUL", precio: 346000.00, familia_key: "PN", graduacion_key: "GRAD", sku_con_apostrofe: "T5LeProNewHiArAz", codigo_barra: "2000409298945" },
+    
+    { tier: "T5", descripcion: "LENT5 PROGRESIVO NEWTON PLUS", precio: 378000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T5LeProNewPl", codigo_barra: "2000409298952" },
+    { tier: "T5", descripcion: "LENT5 PROGRE NEWPLUS + AR AZUL", precio: 417000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T5LeProNewPlArAz", codigo_barra: "2000409298969" },
+    { tier: "T5", descripcion: "LENT5 PROGRE NEWPLUS + POLARIZADO", precio: 467000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T5LeProNewPlSol", codigo_barra: "2000409298976" },
+    { tier: "T5", descripcion: "LENT5 PROGRESIVO NEWPLUS + FOTO", precio: 447000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T5LeProNewPlFo", codigo_barra: "2000409298983" },
+    { tier: "T5", descripcion: "LENT5 PROGRENEWPLUS+FOTO+HI", precio: 496000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T5LeProNewPlFoHi", codigo_barra: "2000409298990" },
+    { tier: "T5", descripcion: "LENT5 PROGRE NEWPLUS + HI", precio: 427000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T5LeProNewPlHi", codigo_barra: "2000409299003" },
+    { tier: "T5", descripcion: "LENT5 PROGRE NEWPLUS+HI+ARAZUL", precio: 466000.00, familia_key: "NP", graduacion_key: "GRAD", sku_con_apostrofe: "T5LeProNewPlHiArAz", codigo_barra: "2000409299010" },
 
-    // TIER 5 (Lentes)
-    { tier: "T5", descripcion: "CLIP ON", precio: 32000.00, graduacion_key: "NOGRAD", final_sku: "T5ClpOn" },
-    { tier: "T5", descripcion: "LENTE MONOFOCAL - AR AZUL", precio: 119000.00, graduacion_key: "MONO", final_sku: "T5LeMoArAz" },
-    { tier: "T5", descripcion: "LENTE MONOFOCAL - HI", precio: 159000.00, graduacion_key: "MONO", final_sku: "T5LeMoHi" },
-    { tier: "T5", descripcion: "LENTE MONOFOCAL - AR AZUL + HI", precio: 168000.00, graduacion_key: "MONO", final_sku: "T5LeMoArAzHi" },
-    { tier: "T5", descripcion: "LENTE MONOFOCAL POLARIZADO", precio: 188000.00, graduacion_key: "MONO", final_sku: "T5LeMoSol" },
-    { tier: "T5", descripcion: "LENTE MONOFOCAL FOTOCROMATICO", precio: 168000.00, graduacion_key: "MONO", final_sku: "T5LeMoFo" },
-    { tier: "T5", descripcion: "LENTE PROGRESIVO NEWTON", precio: 196000.00, graduacion_key: "NEWTON", final_sku: "T5LeProNew" },
-    { tier: "T5", descripcion: "LENTE PROGRESIVO NEWTON + AR AZUL", precio: 207000.00, graduacion_key: "NEWTON", final_sku: "T5LeProNewArAz" },
-    { tier: "T5", descripcion: "LENTE PROGRESIVO NEWTON POLARIZADO", precio: 267000.00, graduacion_key: "NEWTON", final_sku: "T5LeProNewSol" },
-    { tier: "T5", descripcion: "LENTE PROGRESIVO NEWTON + FOTO", precio: 267000.00, graduacion_key: "NEWTON", final_sku: "T5LeProNewFo" },
-    { tier: "T5", descripcion: "LENTE PROGRESIVO NEWTON + FOTO + HI", precio: 287000.00, graduacion_key: "NEWTON", final_sku: "T5LeProNewFoHi" },
-    { tier: "T5", descripcion: "LENTE PROGRESIVO NEWTON + HI", precio: 207000.00, graduacion_key: "NEWTON", final_sku: "T5LeProNewHi" },
-    { tier: "T5", descripcion: "LENTE PROGRESIVO NEWTON + HI + AR AZUL", precio: 237000.00, graduacion_key: "NEWTON", final_sku: "T5LeProNewHiArAz" },
-    { tier: "T5", descripcion: "LENTE PROGRESIVO NEWPLUS", precio: 227000.00, graduacion_key: "NEWPLUS", final_sku: "T5LeProNewPl" },
-    { tier: "T5", descripcion: "LENTE PROGRESIVO NEWPLUS + AR AZUL", precio: 247000.00, graduacion_key: "NEWPLUS", final_sku: "T5LeProNewPlArAz" },
-    { tier: "T5", descripcion: "LENTE PROGRESIVO NEWPLUS POLARIZADO", precio: 297000.00, graduacion_key: "NEWPLUS", final_sku: "T5LeProNewPlSol" },
-    { tier: "T5", descripcion: "LENTE PROGRESIVO NEWPLUS + FOTO", precio: 297000.00, graduacion_key: "NEWPLUS", final_sku: "T5LeProNewPlFo" },
-    { tier: "T5", descripcion: "LENTE PROGRESIVO NEWPLUS + FOTO + HI", precio: 316000.00, graduacion_key: "NEWPLUS", final_sku: "T5LeProNewPlFoHi" },
-    { tier: "T5", descripcion: "LENTE PROGRESIVO NEWPLUS + HI", precio: 247000.00, graduacion_key: "NEWPLUS", final_sku: "T5LeProNewPlHi" },
-    { tier: "T5", descripcion: "LENTE PROGRESIVO NEWPLUS + HI + AR AZUL", precio: 277000.00, graduacion_key: "NEWPLUS", final_sku: "T5LeProNewPlHiArAz" },
-    { tier: "T5", descripcion: "LENTE DE SOL NEUTRO", precio: 104000.00, graduacion_key: "NOGRAD", final_sku: "T5LeNeSol" },
-    { tier: "T5", descripcion: "LENTE DE SOL GRADUADO", precio: 168000.00, graduacion_key: "MONO", final_sku: "T5LeMoSol" },
-    { tier: "T5", descripcion: "NEUTROS CON AR VERDE", precio: 45000.00, graduacion_key: "NOGRAD", final_sku: "T5LeNeArVr" },
-    { tier: "T5", descripcion: "PARA COMPUTO NEUTROS", precio: 64000.00, graduacion_key: "NOGRAD", final_sku: "T5LeNeCom" },
-
-    // TIER 5 (Micas) - Precios y SKU exclusivos
-    { tier: "T5", descripcion: "MICAS MONOFOCAL AR VERDE", precio: 40000.00, graduacion_key: "MONO", final_sku: "T5MicMoArVr" },
-    { tier: "T5", descripcion: "MICAS MONOFOCAL AR AZUL", precio: 40000.00, graduacion_key: "MONO", final_sku: "T5MicMoArAz" },
-    { tier: "T5", descripcion: "MICAS MONOFOCAL FOTOCROMATICO", precio: 104000.00, graduacion_key: "MONO", final_sku: "T5MicMoFo" },
-    { tier: "T5", descripcion: "MICAS MONOFOCAL POLARIZADO", precio: 104000.00, graduacion_key: "MONO", final_sku: "T5MicMoArSol" },
-    { tier: "T5", descripcion: "MICAS NEUTRAS POLARIZADAS", precio: 104000.00, graduacion_key: "NOGRAD", final_sku: "T5MicNeSol" },
-    { tier: "T5", descripcion: "MICAS PROGRESIVO NEWTON AR VERDE", precio: 120000.00, graduacion_key: "NEWTON", final_sku: "T5MicProNew" },
-    { tier: "T5", descripcion: "MICAS PROGRESIVO NEWTON POLARIZADO", precio: 160000.00, graduacion_key: "NEWTON", final_sku: "T5MicProNewSol" },
-    { tier: "T5", descripcion: "MICAS PROGRESIVO NEWTON AR AZUL", precio: 120000.00, graduacion_key: "NEWTON", final_sku: "T5MicProNewArAz" },
-    { tier: "T5", descripcion: "MICAS PROGRESIVO NEWTON FOTOCROMATICO", precio: 160000.00, graduacion_key: "NEWTON", final_sku: "T5MicProNewFo" },
-    { tier: "T5", descripcion: "MICAS PROGRESIVO NEWTON + HI", precio: 160000.00, graduacion_key: "NEWTON", final_sku: "T5MicProNewHi" },
-    { tier: "T5", descripcion: "MICAS PROGRESIVO NEWTON + HI + AR AZUL", precio: 160000.00, graduacion_key: "NEWTON", final_sku: "T5MicProNewHiArAz" },
-    { tier: "T5", descripcion: "MICAS PROGRESIVO NEWPLUS AR VERDE", precio: 160000.00, graduacion_key: "NEWPLUS", final_sku: "T5MicProNewPl" },
-    { tier: "T5", descripcion: "MICAS PROGRESIVO NEWPLUS AR AZUL", precio: 160000.00, graduacion_key: "NEWPLUS", final_sku: "T5MicProNewPlArAz" },
-    { tier: "T5", descripcion: "MICAS PROGRESIVO NEWPLUS POLARIZADO", precio: 200000.00, graduacion_key: "NEWPLUS", final_sku: "T5MicProNewPlSol" },
-    { tier: "T5", descripcion: "MICAS PROGRESIVO NEWPLUS FOTOCROMATICO", precio: 200000.00, graduacion_key: "NEWPLUS", final_sku: "T5MicProNewPlFo" },
-    { tier: "T5", descripcion: "MICAS PROGRESIVO NEWPLUS + HI", precio: 200000.00, graduacion_key: "NEWPLUS", final_sku: "T5MicProNewPlHi" },
-    { tier: "T5", descripcion: "MICAS PROGRESIVO NEWPLUS + HI + AR AZUL", precio: 200000.00, graduacion_key: "NEWPLUS", final_sku: "T5MicProNewPlHiArAz" },
+    // MICAS (TIER 5)
+    { tier: "T5", descripcion: "MICAS GRADUADAS AR VERDE", precio: 42500.00, familia_key: "MI", graduacion_key: "GRAD", sku_con_apostrofe: "T5MicMoArVr", codigo_barra: "2000409299027" },
+    { tier: "T5", descripcion: "MICAS GRADUADAS AR AZUL", precio: 81500.00, familia_key: "MI", graduacion_key: "GRAD", sku_con_apostrofe: "T5MicMoArAz", codigo_barra: "2000409299034" },
+    { tier: "T5", descripcion: "MICAS GRADUADAS FOTO", precio: 111500.00, familia_key: "MI", graduacion_key: "GRAD", sku_con_apostrofe: "T5MicMoFo", codigo_barra: "2000409299041" },
+    { tier: "T5", descripcion: "MICAS GRADUADAS POLARIZADAS", precio: 131500.00, familia_key: "MI", graduacion_key: "GRAD", sku_con_apostrofe: "T5MicMoArSol", codigo_barra: "2000409299058" },
+    { tier: "T5", descripcion: "MICAS NEUTRAS POLARIZADAS", precio: 131500.00, familia_key: "MI", graduacion_key: "NOGRAD", sku_con_apostrofe: "T5MicNeSol", codigo_barra: "2000409299065" },
+    { tier: "T5", descripcion: "MICAS PROGRESIVO NEWTON", precio: 141500.00, familia_key: "MI", graduacion_key: "GRAD", sku_con_apostrofe: "T5MicProNew", codigo_barra: "2000409299072" },
+    { tier: "T5", descripcion: "MICAS PROGRE NEWTON+POLARIZADO", precio: 230500.00, familia_key: "MI", graduacion_key: "GRAD", sku_con_apostrofe: "T5MicProNewSol", codigo_barra: "2000409299089" },
+    { tier: "T5", descripcion: "MICAS PROGRENEWTON+AR AZUL", precio: 180500.00, familia_key: "MI", graduacion_key: "GRAD", sku_con_apostrofe: "T5MicProNewArAz", codigo_barra: "2000409299096" },
+    { tier: "T5", descripcion: "MICAS PROGRE NEWTON+FOTO", precio: 210500.00, familia_key: "MI", graduacion_key: "GRAD", sku_con_apostrofe: "T5MicProNewFo", codigo_barra: "2000409299102" },
+    { tier: "T5", descripcion: "MICAS PROGRENEWTON+HI", precio: 190500.00, familia_key: "MI", graduacion_key: "GRAD", sku_con_apostrofe: "T5MicProNewHi", codigo_barra: "2000409299119" },
+    { tier: "T5", descripcion: "MICAS PROGRENEW+HI+AR AZUL", precio: 229500.00, familia_key: "MI", graduacion_key: "GRAD", sku_con_apostrofe: "T5MicProNewHiArAz", codigo_barra: "2000409299126" },
+    { tier: "T5", descripcion: "MICAS PROGRESIVO NEWTON PLUS", precio: 261500.00, familia_key: "MI", graduacion_key: "GRAD", sku_con_apostrofe: "T5MicProNewPl", codigo_barra: "2000409299133" },
+    { tier: "T5", descripcion: "MICAS PROGRE NEWPLUS+AR AZUL", precio: 300500.00, familia_key: "MI", graduacion_key: "GRAD", sku_con_apostrofe: "T5MicProNewPlArAz", codigo_barra: "2000409299140" },
+    { tier: "T5", descripcion: "MICAS PROGRENEWPLUS+POLARIZADO", precio: 350500.00, familia_key: "MI", graduacion_key: "GRAD", sku_con_apostrofe: "T5MicProNewPlSol", codigo_barra: "2000409299157" },
+    { tier: "T5", descripcion: "MICAS PROGRENEWPLUS+FOTO", precio: 330500.00, familia_key: "MI", graduacion_key: "GRAD", sku_con_apostrofe: "T5MicProNewPlFo", codigo_barra: "2000409299164" },
+    { tier: "T5", descripcion: "MICAS PROGRENEWPLUS+HI", precio: 310500.00, familia_key: "MI", graduacion_key: "GRAD", sku_con_apostrofe: "T5MicProNewPlHi", codigo_barra: "2000409299171" },
+    { tier: "T5", descripcion: "MICAS PROGRNEWPLUS+HI+ARAZUL", precio: 349500.00, familia_key: "MI", graduacion_key: "GRAD", sku_con_apostrofe: "T5MicProNewPlHiArAz", codigo_barra: "2000409299195" }
 ];
-
-const PRODUCT_CATALOG = RAW_CATALOG_DATA.map(item => ({
-    tier: item.tier,
-    graduacion: item.graduacion_key,
-    combinacion_final: item.descripcion, // La descripción es la opción de cara al usuario
-    precio: item.precio,
-    final_sku: item.final_sku,
-}));
 
 
 // =================================================================
-// 2. ELEMENTOS Y CONFIGURACIÓN
+// 2. PROCESAMIENTO Y MAPPING
 // =================================================================
 
-const tier = document.getElementById("tier");
-const graduacion = document.getElementById("graduacion");
-const combinacion_final = document.getElementById("combinacion_final");
-const generar = document.getElementById("generar");
-const preview = document.getElementById("preview");
+function processCatalogData(data) {
+    const processedData = {};
+    data.forEach(item => {
+        // Limpia el SKU quitando cualquier apóstrofe (carácter simple ')
+        const cleanSku = item.sku_con_apostrofe.replace(/'/g, ''); 
+        
+        // La clave de acceso usa Tier y Familia
+        const key = `${item.tier}_${item.familia_key}_${cleanSku}`;
+        
+        if (!processedData[item.tier]) {
+            processedData[item.tier] = {};
+        }
 
-// El orden de selectores: solo 3
-const SELECT_CONTROLS = [
-    { id: "tier", element: tier, label: "Seleccionar Tier" },
-    { id: "graduacion", element: graduacion, label: "Graduación" },
-    { id: "combinacion_final", element: combinacion_final, label: "Combinación / Producto Final" }
-];
+        // Almacena los datos en la estructura final
+        processedData[item.tier][key] = {
+            descripcion: item.descripcion,
+            precio: item.precio,
+            sku: cleanSku, 
+            codigo_barra: item.codigo_barra, 
+            familia_key: item.familia_key
+        };
+    });
+    return processedData;
+}
 
-// Mapeo para nombres de opciones de Graduación
-const OPTION_LABELS_GRAD = {
-    MONO: 'Monofocal',
-    NEWTON: 'Progresivo Newton',
-    NEWPLUS: 'Progresivo Newton Plus',
-    NOGRAD: 'Sin graduación',
-    // Usamos el texto de la descripción para la combinacion_final
+const CATALOG_DATA = processCatalogData(RAW_CATALOG_DATA);
+
+// Mapeo de Nombres de Familia (Para mostrar en el segundo selector)
+const FAMILIA_OPTIONS = {
+    'NG': 'Sin Graduación / Neutros',
+    'MO': 'Monofocal',
+    'PN': 'Progresivo Newton',
+    'NP': 'Progresivo Newton Plus',
+    'MI': 'Micas'
 };
 
 
 // =================================================================
-// 3. FUNCIONES DE LÓGICA
+// 3. EVENTOS Y LÓGICA DE LA APLICACIÓN
 // =================================================================
 
-function formatPrice(price) {
-    if (price === undefined || price === null) return "Precio no disponible";
-    // Usamos Intl.NumberFormat para un formato de moneda correcto
-    return new Intl.NumberFormat('es-CO', { // Puedes cambiar 'es-CO' a tu región de preferencia
-        style: 'currency',
-        currency: 'USD', // O COP, MXN, etc.
-        minimumFractionDigits: 0
-    }).format(price);
-}
-
-function resetNextSelects(startIndex) {
-    for (let i = startIndex; i < SELECT_CONTROLS.length; i++) {
-        const control = SELECT_CONTROLS[i];
-        control.element.innerHTML = `<option value="">-- Selecciona --</option>`;
-        control.element.value = "";
-        control.element.disabled = true;
-    }
-    generar.disabled = true;
-    preview.innerHTML = "";
-}
-
-function updateOptions(currentId) {
-    const currentIndex = SELECT_CONTROLS.findIndex(c => c.id === currentId);
-    resetNextSelects(currentIndex + 1);
-
-    const selections = {};
-    for (let i = 0; i <= currentIndex; i++) {
-        selections[SELECT_CONTROLS[i].id] = SELECT_CONTROLS[i].element.value;
-    }
-
-    if (selections[currentId] === "") {
-        return;
-    }
-
-    const nextControl = SELECT_CONTROLS[currentIndex + 1];
-    if (!nextControl) {
-        generar.disabled = false;
-        return;
-    }
-
-    // Filtrar el Catálogo basado en las selecciones previas
-    let filteredCatalog = PRODUCT_CATALOG.filter(product => {
-        let match = true;
-        ['tier', 'graduacion'].forEach(key => {
-            if (selections[key] && product[key] !== selections[key]) {
-                match = false;
-            }
-        });
-        return match;
-    });
-
-    let nextOptions = [];
-    if (nextControl.id === 'graduacion') {
-        // Para Graduación: obtenemos las 4 opciones principales que estén disponibles
-        nextOptions = ["MONO", "NOGRAD", "NEWTON", "NEWPLUS"].filter(
-            grad => filteredCatalog.some(p => p.graduacion === grad)
-        );
-        nextOptions.sort((a, b) => a.localeCompare(b));
-    } else {
-        // Para combinacion_final: Obtenemos objetos {value: descripción, price: precio}
-        const uniqueCombinations = {};
-        filteredCatalog.forEach(p => {
-             // La clave única es la descripción (value), el precio debe ser el que coincide con el TIER
-             uniqueCombinations[p.combinacion_final] = p.precio;
-        });
-
-        // Convertir el mapa a un array de objetos para el select
-        nextOptions = Object.keys(uniqueCombinations).map(value => ({
-            value: value,
-            price: uniqueCombinations[value]
-        }));
-        
-        // Ordenamos por nombre de combinación
-        nextOptions.sort((a, b) => a.value.localeCompare(b.value));
-    }
-
-    // 6. Popular el siguiente selector y habilitarlo
-    if (nextOptions.length > 0) {
-        let optionsHtml = `<option value="">-- Selecciona --</option>`;
-        
-        nextOptions.forEach(option => {
-            if (nextControl.id === 'graduacion') {
-                const label = OPTION_LABELS_GRAD[option] || option;
-                optionsHtml += `<option value="${option}">${label}</option>`;
-            } else if (nextControl.id === 'combinacion_final') {
-                // Aquí usamos el valor y el precio en la etiqueta visible
-                const priceFormatted = formatPrice(option.price);
-                optionsHtml += `<option value="${option.value}">${option.value} (${priceFormatted})</option>`;
-            }
-        });
-
-        nextControl.element.innerHTML = optionsHtml;
-        nextControl.element.disabled = false;
-    }
-}
-
-
-// =================================================================
-// 4. ASIGNACIÓN DE EVENT LISTENERS
-// =================================================================
-
-SELECT_CONTROLS.forEach((control) => {
-    control.element.addEventListener("change", () => {
-        updateOptions(control.id);
-        
-        // Habilitar Generar si el último select tiene valor
-        if (control.id === 'combinacion_final' && control.element.value !== "") {
-            generar.disabled = false;
-        } else if (control.id === 'combinacion_final' && control.element.value === "") {
-            generar.disabled = true;
-        }
-    });
+document.addEventListener('DOMContentLoaded', () => {
+    // Escucha el primer selector: Tier
+    document.getElementById('tier').addEventListener('change', updateFamiliaOptions);
+    
+    // Escucha el segundo selector: Familia
+    document.getElementById('familia').addEventListener('change', updateProductOptions);
+    
+    // Escucha el tercer selector: Producto Final
+    document.getElementById('productoFinal').addEventListener('change', generateEtiqueta);
+    
+    // Inicializa limpiando todo al cargar
+    updateFamiliaOptions(); 
 });
 
 
-// =================================================================
-// 5. GENERACIÓN DE ETIQUETA
-// =================================================================
+function updateFamiliaOptions() {
+    const tier = document.getElementById('tier').value;
+    const familiaSelect = document.getElementById('familia');
+    familiaSelect.innerHTML = '<option value="">-- Selecciona --</option>';
 
-generar.addEventListener("click", () => {
-    const t = tier.value;
-    const g = graduacion.value;
-    const cf = combinacion_final.value; 
-
-    // Buscamos el SKU final EXACTO usando la coincidencia de los 3 campos
-    const finalProduct = PRODUCT_CATALOG.find(p => 
-        p.tier === t && 
-        p.graduacion === g && 
-        p.combinacion_final === cf
-    );
-
-    const finalSKU = finalProduct ? finalProduct.final_sku : "SKU-NO-ENCONTRADO";
-    const precioUnitario = finalProduct ? formatPrice(finalProduct.precio) : "N/A";
-    const consignacion = "123456";
-
-    if (finalSKU === "SKU-NO-ENCONTRADO") {
-        preview.innerHTML = `<p style="color: red;">Error: La combinación seleccionada no es un producto válido en el catálogo.</p>`;
+    if (!tier) {
+        updateProductOptions(); // Limpia el selector final
         return;
     }
-    
-    // Generación de Etiqueta
-    preview.innerHTML = `
-        <div class="barcode">
-            <svg id="barcode"></svg>
-            <p style="font-size:20px; margin:5px 0;"><b>${finalSKU}</b></p>
-            <p style="font-size:18px;">Precio: ${precioUnitario}</p>
-            <p style="font-size:18px;">${consignacion}</p>
+
+    const availableFamilias = new Set();
+
+    // Recorre el catálogo para el tier seleccionado y recolecta las familias disponibles
+    for (const key in CATALOG_DATA[tier]) {
+        if (CATALOG_DATA[tier].hasOwnProperty(key)) {
+            availableFamilias.add(CATALOG_DATA[tier][key].familia_key);
+        }
+    }
+
+    // Ordena las familias alfabéticamente
+    const sortedFamilias = Array.from(availableFamilias).sort((a, b) => {
+        return FAMILIA_OPTIONS[a].localeCompare(FAMILIA_OPTIONS[b]);
+    });
+
+    sortedFamilias.forEach(key => {
+        const option = document.createElement('option');
+        option.value = key;
+        option.textContent = FAMILIA_OPTIONS[key] || key;
+        familiaSelect.appendChild(option);
+    });
+
+    updateProductOptions(); // Limpia el selector final
+}
+
+
+function updateProductOptions() {
+    const tier = document.getElementById('tier').value;
+    const familiaKey = document.getElementById('familia').value;
+    const productoSelect = document.getElementById('productoFinal');
+    productoSelect.innerHTML = '<option value="">-- Selecciona --</option>';
+
+    if (!tier || !familiaKey) {
+        document.getElementById('etiquetaGenerada').innerHTML = '';
+        return;
+    }
+
+    const filteredProducts = {};
+
+    for (const key in CATALOG_DATA[tier]) {
+        const product = CATALOG_DATA[tier][key];
+        
+        // Filtramos por la FAMILIA seleccionada
+        if (product.familia_key === familiaKey) {
+            
+            // Formatea el precio para mostrar en el selector
+            const precioFormateado = product.precio.toLocaleString('es-CL', {
+                style: 'currency',
+                currency: 'CLP',
+                minimumFractionDigits: 0
+            });
+            
+            // La opción en el selector combina la descripción y el precio formateado
+            const optionText = `${product.descripcion} (${precioFormateado})`;
+            filteredProducts[key] = optionText;
+        }
+    }
+
+    // Ordena las opciones alfabéticamente por el texto de la opción
+    const sortedKeys = Object.keys(filteredProducts).sort((a, b) => {
+        return filteredProducts[a].localeCompare(filteredProducts[b]);
+    });
+
+    // Agregar las opciones ordenadas al selector
+    sortedKeys.forEach(key => {
+        const option = document.createElement('option');
+        option.value = key;
+        option.textContent = filteredProducts[key];
+        productoSelect.appendChild(option);
+    });
+
+    document.getElementById('etiquetaGenerada').innerHTML = '';
+}
+
+
+function generateEtiqueta() {
+    const tier = document.getElementById('tier').value;
+    const fullKey = document.getElementById('productoFinal').value;
+    const etiquetaContainer = document.getElementById('etiquetaGenerada');
+
+    if (!tier || !fullKey) {
+        etiquetaContainer.innerHTML = '';
+        return;
+    }
+
+    const selectedProduct = CATALOG_DATA[tier][fullKey];
+
+    // Formato de Moneda para el TOTAL DE LA VENTA (CLP sin decimales)
+    const precioFormateado = selectedProduct.precio.toLocaleString('es-CL', {
+        style: 'currency',
+        currency: 'CLP', 
+        minimumFractionDigits: 0
+    });
+
+    // Estructura de la etiqueta simplificada (solo Producto, Total y Código de Barras)
+    const etiquetaHTML = `
+        <div class="etiqueta-container">
+            
+            <div class="info-line">
+                <span class="label">Producto:</span>
+                <span class="value">${selectedProduct.descripcion}</span>
+            </div>
+            
+            <div class="info-line price-total">
+                <span class="label">TOTAL DE LA VENTA:</span>
+                <span class="value">${precioFormateado}</span>
+            </div>
+
+            <div class="barcode-area">
+                <canvas id="barcodeCanvas"></canvas>
+                <div class="barcode-number">${selectedProduct.codigo_barra}</div>
+            </div>
+            
         </div>
     `;
 
-    JsBarcode("#barcode", finalSKU, {
-        format: "CODE128",
-        width: 3,
-        height: 90,
-        displayValue: false
-    });
-});
+    etiquetaContainer.innerHTML = etiquetaHTML;
+
+    // Generar Código de Barras usando JsBarcode
+    if (typeof JsBarcode !== 'undefined') {
+        JsBarcode("#barcodeCanvas", selectedProduct.codigo_barra, {
+            format: "EAN13", 
+            displayValue: false, 
+            height: 50,
+            margin: 5
+        });
+    } else {
+        console.error("JsBarcode no está cargado.");
+    }
+}
