@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Generar Etiqueta</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            padding: 20px;
+            max-width: 500px;
+            margin: auto;
+        }
+
+        select, button {
+            width: 100%;
+            padding: 12px;
+            font-size: 16px;
+            margin-top: 12px;
+        }
+
+        #preview {
+            margin-top: 25px;
+            padding: 15px;
+            border: 1px solid #ccc;
+        }
+
+        .barcode {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+
+<h2>Generar Etiqueta Simplificada</h2>
+
+<label>Seleccionar Tier</label>
+<select id="tier">
+    <option value="">-- Selecciona --</option>
+    <option value="T1">Tier 1</option>
+    <option value="T2">Tier 2</option>
+    <option value="T3">Tier 3</option>
+    <option value="T4">Tier 4</option>
+    <option value="T5">Tier 5</option>
+</select>
+
+<label>Graduación</label>
+<select id="graduacion" disabled>
+    <option value="">-- Selecciona --</option>
+    </select>
+
+<label>Combinación / Producto Final</label>
+<select id="combinacion_final" disabled> 
+    <option value="">-- Selecciona --</option>
+    </select>
+
+<button id="generar" disabled>Generar Etiqueta</button>
+
+<div id="preview"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/jsbarcode@3.11.6/dist/JsBarcode.all.min.js"></script>
+<script src="app.js?v=202512100725"></script>
+
+</body>
+</html>
